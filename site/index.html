@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>전국 상권 분석 대시보드 · 소상공인시장진흥공단</title>
+<meta name="description" content="소상공인시장진흥공단 상가(상권)정보를 분기마다 자동 갱신해 보여주는 전국 상권 분석 대시보드">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>전국 상권 분석</h1>
+    <p class="sub">소상공인시장진흥공단 <b>상가(상권)정보</b> · 분기별 자동 갱신</p>
+  </div>
+  <div class="meta" id="meta"></div>
+</header>
+
+<nav class="tabs wrap" role="tablist">
+  <button class="tab active" data-tab="map" role="tab">반경 경쟁 밀도</button>
+  <button class="tab" data-tab="compare" role="tab">지역 비교</button>
+  <button class="tab" data-tab="white" role="tab">경쟁 적은 업종</button>
+  <button class="tab" data-tab="trend" role="tab">분기 추이</button>
+  <button class="tab" data-tab="about" role="tab">데이터/방법</button>
+</nav>
+
+<main class="wrap">
+
+  <!-- ============ 반경 경쟁 밀도 ============ -->
+  <section id="tab-map" class="panel active">
+    <div class="grid-2">
+      <div class="card map-card">
+        <div class="map-head">
+          <div>
+            <h2>지도에서 지점을 클릭하면 그 주변의 업소 구성을 셉니다</h2>
+            <p class="hint">격자 2km 단위로 미리 집계해둔 데이터입니다. 반경은 500m / 1km / 2km 중 선택.</p>
+          </div>
+          <div class="map-ctl">
+            <label>반경
+              <select id="radius">
+                <option value="0.005">500m</option>
+                <option value="0.01" selected>1km</option>
+                <option value="0.02">2km</option>
+              </select>
+            </label>
+            <label>시각화
+              <select id="gridMetric">
+                <option value="n">전체 업소</option>
+                <option value="카페">카페</option>
+                <option value="편의점">편의점</option>
+                <option value="치킨">치킨</option>
+                <option value="미용실">미용실</option>
+                <option value="부동산 중개/대리업">부동산</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="map"></div>
+        <p class="legend-note">
+          색이 진할수록 해당 업종이 조밀한 2km 격자입니다.
+          <span class="warn">격자 단위 집계라 반경 내 수는 근사치이며, 격자 중심이 아니라 업소 실제 좌표 기준이 아닙니다.</span>
+        </p>
+      </div>
+
+      <div class="card">
+        <h2 id="radTitle">지점을 선택하세요</h2>
+        <p class="hint" id="radWhere">지도를 클릭하면 그 지점 주변의 경쟁 밀도가 나옵니다.</p>
+        <div id="radBody" class="empty">아직 선택한 지점이 없습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 지역 비교 ============ -->
+  <section id="tab-compare" class="panel">
+    <div class="card">
+      <div class="ctl-row">
+        <label>구분
+          <select id="cmpLevel">
+            <option value="sgg">시군구</option>
+            <option value="sido">시도</option>
+          </select>
+        </label>
+        <label>지표
+          <select id="cmpMetric">
+            <option value="n">업소 수</option>
+            <option value="per1k">인구 1,000명당</option>
+            <option value="cafe10k">카페 1만명당</option>
+            <option value="cvs10k">편의점 1만명당</option>
+            <option value="hair10k">미용실 1만명당</option>
+            <option value="hagwon10k">입시학원 1만명당</option>
+            <option value="realty10k">부동산 1만명당</option>
+            <option value="food">음식 비중(%)</option>
+            <option value="sci">과학·기술 비중(%)</option>
+            <option value="edu">교육 비중(%)</option>
+            <option value="lodging">숙박 비중(%)</option>
+          </select>
+        </label>
+        <label>검색
+          <input type="search" id="cmpSearch" placeholder="지역명 필터">
+        </label>
+        <label>개수
+          <select id="cmpTop">
+            <option value="20">20개</option>
+            <option value="30">30개</option>
+            <option value="50">50개</option>
+            <option value="0">전체</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint" id="cmpHint"></p>
+      <div class="scroll"><table id="cmpTable"></table></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card"><h2>시도별 업소 수</h2><canvas id="cSido"></canvas></div>
+      <div class="card"><h2>업종 대분류 구성</h2><canvas id="cMajor"></canvas></div>
+      <div class="card"><h2>소분류 상위 20</h2><canvas id="cSmall"></canvas></div>
+      <div class="card"><h2>서울 25개 구 업종 성격</h2><canvas id="cSeoul"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ 미집약 업종 ============ -->
+  <section id="tab-white" class="panel">
+    <div class="card">
+      <h2>경쟁이 없는 자리를 찾기</h2>
+      <p class="hint">
+        선택한 업종의 인구 1만명당 점포수가 <b>가장 낮은</b> 시군구 순으로 보여줍니다.
+        경쟁자가 적다는 뜻일 뿐이라, 그 상권이 충분히 큰지는 마지막 컬럼까지 함께 봐야 합니다.
+      </p>
+      <div class="ctl-row">
+        <label>업종
+          <select id="whiteCat"></select>
+        </label>
+        <label>최소 인구
+          <select id="whiteMinPop">
+            <option value="0">제한 없음</option>
+            <option value="20000">2만 명 이상</option>
+            <option value="50000" selected>5만 명 이상</option>
+            <option value="100000">10만 명 이상</option>
+          </select>
+        </label>
+        <label>최소 상권 규모
+          <select id="whiteMinShops">
+            <option value="0">제한 없음</option>
+            <option value="500">업소 500개 이상</option>
+            <option value="2000" selected>업소 2,000개 이상</option>
+            <option value="5000">업소 5,000개 이상</option>
+          </select>
+        </label>
+      </div>
+      <div class="scroll"><table id="whiteTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ 분기 추이 ============ -->
+  <section id="tab-trend" class="panel">
+    <div class="card">
+      <h2>분기별 추이</h2>
+      <p class="hint" id="trendHint"></p>
+      <div class="scroll"><table id="trendTable"></table></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><h2>전국 업소 수 추이</h2><canvas id="cTrend"></canvas></div>
+      <div class="card"><h2>업종별 점유율 추이</h2><canvas id="cTrendMix"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ 데이터/방법 ============ -->
+  <section id="tab-about" class="panel">
+    <div class="card prose">
+      <h2>데이터 출처</h2>
+      <ul>
+        <li><b>소상공인시장진흥공단_상가(상권)정보</b> — <a href="https://www.data.go.kr/data/15083033/fileData.do" target="_blank" rel="noopener">공공데이터포털</a>. 전국 영업 중 상가업소의 상호명, 업종 대/중/소분류, 지번·도로명주소, 좌표를 제공. 이용허락범위 제한 없음.</li>
+        <li><b>행정안전부 주민등록 인구통계</b> — <a href="https://jumin.mois.go.kr" target="_blank" rel="noopener">jumin.mois.go.kr</a>. 시군구별 인구를 사용해 인구당 밀도를 계산.</li>
+      </ul>
+      <h2>업데이트 방식</h2>
+      <p>
+        GitHub Actions가 매주 월요일 06:00(KST)에 data.go.kr을 확인해 새 분기가 나오면
+        내려받고 집계한 뒤 이 저장소에 커밋합니다. GitHub Pages가 그 커밋을 자동 배포합니다.
+        별도 서버도, 월 비용도 없습니다.
+      </p>
+      <h2>이해해야 할 한계</h2>
+      <ul>
+        <li><b>분기 스냅샷입니다.</b> 각 분기 시점의 영업 중 업소만 담고 있어, 이 데이터만으로 폐업률을 계산할 수 없습니다. 증감은 같은 업소번호(상가업소번호)를 기준으로 분기 간 비교해야 합니다.</li>
+        <li><b>브랜드 수치는 추정입니다.</b> 편의점·카페·치킨 브랜드 점유율은 상호명에 포함된 문자열을 규칙으로 매칭한 값이라 실제 점포 수와 다릅니다. 참고용으로만 쓰세요.</li>
+        <li><b>반경 밀도는 근사입니다.</b> 2km 격자로 미리 뭉어 둔 값이라 격자 경계를 넘는 오차가 있습니다. 정확한 값이 필요하면 원본 CSV로 직접 집계해야 합니다.</li>
+        <li><b>"소상공인"만 있는 데이터가 아닙니다.</b> 프랜차이즈·대형점·임대점포 등도 함께 집계되므로 실제 소상공인 수와 차이가 있습니다.</li>
+        <li><b>인구는 주민등록 기준입니다.</b> 실제로 살면서 전입신고를 하지 않은 사람은 집계되지 않습니다. 유동인구가 많은 지역에서는 실제 체류 인구보다 적게 나옵니다.</li>
+      </ul>
+      <h2>다시 만들기</h2>
+      <p>로컬에서 전체 파이프라인을 다시 돌리려면:</p>
+      <pre>pip install duckdb pandas requests lxml html5lib
+python scripts/refresh.py</pre>
+      <p class="hint">첫 실행은 353MB ZIP 다운로드 때문에 몇 분 걸립니다.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>출처: 공공데이터포털(소상공인시장진흥공단), 행정안전부 · 이 대시보드는 개인 분석용이며 공식 통계가 아닙니다.</p>
+</footer>
+
+<div id="loading" class="loading">데이터 불러오는 중…</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# 원본 데이터는 353MB라 저장소에 넣지 않는다. 필요하면 refresh.py 가 다시 받는다.
+# 앞의 슬래시가 있어야 site/data/ (배포 대상) 는 걸리지 않는다.
+/data/
+
+# site/data/dashboard.json 은 Pages 가 읽는 산출물이므로 반드시 커밋한다.
+
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.duckdb
+*.xls
+*.xlsx

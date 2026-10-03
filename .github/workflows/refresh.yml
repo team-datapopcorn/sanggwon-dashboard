@@ -1,0 +1,71 @@
+name: 상권 데이터 자동 갱신
+
+on:
+  schedule:
+    # 분기 데이터만 나오므로 매일 돌릴 필요는 없다. 매주 월요일 06:00 KST(=utc 21:00 일요일)
+    - cron: "0 21 * * 0"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "캐시된 ZIP 을 무시하고 다시 받기"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-sanggwon
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 캐시 복원 (CSV 있으면 다운로드 생략)
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/raw/zip
+            data/raw/csv
+            data/raw/population_sgg.xlsx
+          key: sanggwon-csv-${{ github.run_id }}
+          restore-keys: sanggwon-csv-
+
+      - name: 의존성 설치
+        run: |
+          python -m pip install --upgrade pip
+          pip install duckdb pandas requests lxml html5lib openpyxl
+
+      - name: 데이터 갱신
+        run: python scripts/refresh.py
+
+      - name: 산출물 검증
+        run: python scripts/verify_output.py
+
+      - name: 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/dashboard.json site/data/history.json || true
+          if git diff --staged --quiet; then
+            echo "변경 없음 — 스킵"
+          else
+            VERSION=$(python -c "import json;print(json.load(open('site/data/dashboard.json'))['meta']['version'])")
+            git commit -m "data: 상권정보 ${VERSION} 반영"
+            git push
+          fi
+
+      - name: 결과 요약
+        if: always()
+        run: |
+          if [ -f site/data/dashboard.json ]; then
+            python -c "import json;d=json.load(open('site/data/dashboard.json'));m=d['meta'];print('::notice title=상권 데이터 갱신::%s / %s개 업소' % (m['version'], format(m['total'],',')))"
+          fi
