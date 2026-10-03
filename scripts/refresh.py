@@ -31,9 +31,10 @@ RAW = DATA / "raw"
 CSV_DIR = RAW / "csv"
 POP_CSV = RAW / "population_sgg.csv"
 
-# GitHub Pages 가 site/ 를 루트로 서비스하므로, 대시보드가 읽을 JSON 은
-# site/data/ 아래에 있어야 한다. 루트 밖(../data)으로 두면 404가 난다.
-OUT = ROOT / "site" / "data"
+# GitHub Pages 브랜치 소스는 루트(/) 또는 /docs 만 허용한다.
+# 그래서 화면은 docs/ 아래에 있고, Pages 가 그 폴더를 루트로 서비스한다.
+# app.js 의 상대경로(data/dashboard.json)는 그대로 유지된다.
+OUT = ROOT / "docs" / "data"
 
 
 def convert_population_xls(xls_path: Path, out_csv: Path) -> Path | None:

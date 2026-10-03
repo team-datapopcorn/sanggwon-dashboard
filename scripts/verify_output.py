@@ -1,7 +1,7 @@
 import json, re, pathlib
-d = json.load(open('site/data/dashboard.json'))
-js = pathlib.Path('site/js/app.js').read_text()
-html = pathlib.Path('site/index.html').read_text()
+d = json.load(open('docs/data/dashboard.json'))
+js = pathlib.Path('docs/js/app.js').read_text()
+html = pathlib.Path('docs/index.html').read_text()
 
 print("== 키 존재 확인")
 for k in ['meta','major','middle','small','sido','sgg','dong','floor','brand_cvs','brand_cafe',

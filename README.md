@@ -61,7 +61,7 @@ GitHub Actions (매주 월요일 06:00 KST)
      - 지도용 2km 격자 압축
      - 분기 스냅샷을 history.json에 누적
   |
-  4. site/data/dashboard.json 커밋
+  4. docs/data/dashboard.json 커밋
   |
   5. GitHub Pages 자동 배포
 ```
@@ -82,9 +82,9 @@ scripts/download.py           data.go.kr 2단계 다운로드 + CP949 unzip + �
 scripts/build_aggregates.py   DuckDB 집계 -> dashboard.json
 scripts/refresh.py            위 둘을 잇는 파이프라인
 .github/workflows/refresh.yml 매주 크론 -> 검증 -> 커밋
-site/                         GitHub Pages가 서비스하는 정적 화면
-site/data/dashboard.json      자동 생성 (커밋 대상)
-docs/                         강의 자료와 노트북
+docs/                         GitHub Pages가 서비스하는 화면 (Source: main / /docs)
+docs/data/dashboard.json      자동 생성 (커밋 대상)
+docs/colab-duckdb.ipynb    Colab 실습 노트북
 ```
 
 ## 실행 방법
@@ -100,7 +100,7 @@ python scripts/refresh.py
 GitHub Actions로 돌리려면 저장소를 push한 뒤
 **Settings -> Actions -> 상권 데이터 자동 갱신 -> Run workflow** 로 수동 실행해 봅니다.
 
-GitHub Pages 설정은 **Settings -> Pages -> Source: Deploy from a branch -> `main` / `/site`** 입니다.
+GitHub Pages 설정은 **Settings -> Pages -> Source: Deploy from a branch -> `main` / `/docs`** 입니다.
 
 ## 강의용 노트
 
@@ -113,7 +113,7 @@ GitHub Pages 설정은 **Settings -> Pages -> Source: Deploy from a branch -> `m
 | 3 | DuckDB로 메모리 없이 대용량 집계 | `scripts/build_aggregates.py` |
 | 4 | pandas로 하기 어려운 것 (인구 결합, 격자 압축) | `scripts/build_aggregates.py` |
 | 5 | 배치 자동화, 산출물 검증, 실패를 조용히 넘기지 않기 | `.github/workflows/refresh.yml` |
-| 6 | 해석의 한계를 UI에 함께 노출하기 | `site/` |
+| 6 | 해석의 한계를 UI에 함께 노출하기 | `docs/` |
 
 Colab에서 DuckDB만 써보고 싶다면 [`docs/colab-duckdb.ipynb`](docs/colab-duckdb.ipynb)를
 보세요. 서버 없이 파일 한 개로 SQL이 돌아가는 것을 확인할 수 있습니다.
@@ -158,7 +158,7 @@ Colab에서 DuckDB만 써보고 싶다면 [`docs/colab-duckdb.ipynb`](docs/colab
 기본 경고선은 8MB입니다.
 
 **지도가 안 떠요**
-Pages Source가 `main` / `site`인지 확인하세요. `site/`가 루트 밖이면 404입니다.
+Pages Source가 `main` / `site`인지 확인하세요. `docs/`가 루트 밖이면 404입니다.
 
 ## 라이선스
 

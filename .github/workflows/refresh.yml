@@ -54,11 +54,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/dashboard.json site/data/history.json || true
+          git add docs/data/dashboard.json docs/data/history.json || true
           if git diff --staged --quiet; then
             echo "변경 없음 — 스킵"
           else
-            VERSION=$(python -c "import json;print(json.load(open('site/data/dashboard.json'))['meta']['version'])")
+            VERSION=$(python -c "import json;print(json.load(open('docs/data/dashboard.json'))['meta']['version'])")
             git commit -m "data: 상권정보 ${VERSION} 반영"
             git push
           fi
@@ -66,6 +66,6 @@ jobs:
       - name: 결과 요약
         if: always()
         run: |
-          if [ -f site/data/dashboard.json ]; then
-            python -c "import json;d=json.load(open('site/data/dashboard.json'));m=d['meta'];print('::notice title=상권 데이터 갱신::%s / %s개 업소' % (m['version'], format(m['total'],',')))"
+          if [ -f docs/data/dashboard.json ]; then
+            python -c "import json;d=json.load(open('docs/data/dashboard.json'));m=d['meta'];print('::notice title=상권 데이터 갱신::%s / %s개 업소' % (m['version'], format(m['total'],',')))"
           fi
